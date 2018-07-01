@@ -1,13 +1,15 @@
 pub use self::errors::CDBError;
 
+use failure;
+
 use bytes::{Buf, Bytes, IntoBuf};
 use std::cmp;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
-use std::result;
 use memmap::Mmap;
 use std::path::Path;
+use std::result;
 
 pub mod errors;
 pub mod input;
@@ -19,7 +21,7 @@ const MAIN_TABLE_SIZE_BYTES: usize = 2048;
 const END_TABLE_ENTRY_SIZE: usize = 8;
 const DATA_HEADER_SIZE: usize = 8;
 
-pub type Result<T> = result::Result<T, CDBError>;
+pub type Result<T> = result::Result<T, failure::Error>;
 
 // idea from https://raw.githubusercontent.com/jothan/cordoba/master/src/lib.rs
 #[derive(Copy, Clone, Eq, PartialEq)]
