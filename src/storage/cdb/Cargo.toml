@@ -4,6 +4,7 @@ members = [
     "cdb_rs",
     "cdb_ffi",
     "cdb_ccommon",
+    "cdbgen",
 ]
 
 [profile.release]
@@ -17,6 +18,7 @@ codegen-units = 1
 [profile.dev]
 debug = true
 opt-level = 0
+codegen-units = 4
 
 [term]
 verbose = true

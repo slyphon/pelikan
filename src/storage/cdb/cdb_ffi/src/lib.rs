@@ -15,17 +15,11 @@ use std::os::raw::c_char;
 use std::path::PathBuf;
 use std::ptr;
 
-use cdb_rs::cdb;
-use cdb_rs::{Mmap, Result, CDB};
+use cdb_rs::{CDBData, LoadOption, Result, Reader};
 
 use ccommon::bstring::{BStringRef, BStringRefMut};
 use cdb_ccommon::bindings as bind;
 
-#[repr(C)]
-pub enum CDBData {
-    Boxed(Box<[u8]>),
-    Mmapped(Mmap),
-}
 
 #[repr(C)]
 pub struct CDBHandle {
@@ -37,6 +31,7 @@ pub enum CDBStoreMethod {
     HEAP = 1,
     MMAP = 2,
 }
+
 
 impl CDBHandle {
     pub unsafe fn from_raw<'a>(ptr: *mut CDBHandle) -> &'a CDBHandle {
@@ -58,20 +53,6 @@ impl AsRef<[u8]> for CDBHandle {
     }
 }
 
-enum LoadOption {
-    Heap(PathBuf),
-    Mmap(PathBuf),
-}
-
-#[inline]
-fn mk_cdb_handler(lo: LoadOption) -> Result<CDBHandle> {
-    match lo {
-        LoadOption::Heap(pb) => cdb::mmap_bytes_at_path(&pb)
-            .map(|mm| CDBHandle::new(CDBData::Mmapped(mm))),
-        LoadOption::Mmap(pb) => cdb::load_bytes_at_path(&pb)
-            .map(|b| CDBHandle::new(CDBData::Boxed(b))),
-    }
-}
 
 #[inline]
 fn cstr_to_path_buf(s: *const c_char) -> Result<PathBuf> {
@@ -88,19 +69,15 @@ fn cstr_to_path_buf(s: *const c_char) -> Result<PathBuf> {
 #[no_mangle]
 pub extern "C" fn cdb_handle_create(
     path: *const c_char,
-    opt: CDBStoreMethod
+    opt: LoadOption
 ) -> *mut CDBHandle {
     assert!(!path.is_null());
 
     cstr_to_path_buf(path)
         .and_then(|pathbuf| {
-            mk_cdb_handler(
-                match opt {
-                    CDBStoreMethod::HEAP => LoadOption::Heap(pathbuf),
-                    CDBStoreMethod::MMAP => LoadOption::Mmap(pathbuf),
-                }
-            )
+            CDBData::new(pathbuf.into(), opt)
         })
+        .map(|cbdb| CDBHandle::new(cbdb))
         .map(|h| Box::into_raw(Box::new(h)))
         .unwrap_or_else(|err| {
             error!("failed to create cdb_handle {:?}", err);
@@ -123,7 +100,7 @@ pub extern "C" fn cdb_get(
     let key = unsafe { BStringRef::from_raw(k) };
     let mut val = unsafe { BStringRefMut::from_raw(v) };
 
-    match CDB::new(handle).get(&key, &mut val) {
+    match Reader::new(handle).get(&key, &mut val) {
         Ok(Some(n)) => {
             {
                 // this provides access to the underlying struct fields

@@ -17,4 +17,4 @@ name = "cdb_ffi"
 crate-type = ["cdylib", "staticlib"]
 
 [build-dependencies]
-bindgen = "0.37.0"
+bindgen = "~0.37"
