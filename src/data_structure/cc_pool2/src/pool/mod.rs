@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std;
 
-
 // we can either have a VecDeque of Box<[u8]>, which is like an array
 // of (bstring *), or we could contiguously allocate a Vec<u8> and carve
 // off owned ranges of it. This implementation follows the existing one, using
@@ -33,13 +32,6 @@ impl Pool {
             obj_size,
             initfn: Box::new(initfn),
         }
-    }
-
-    /// Calculate the 'slack' space we have, which is the total number of
-    /// unallocated objects we can grow before we hit `nmax`.
-    /// This is `nmax - (freeq.len() + nused)`
-    fn slack(&self) -> usize {
-        self.nmax - (self.freeq.len() + self.nused)
     }
 
     pub fn prealloc(&mut self, size: usize) {
