@@ -1,24 +1,23 @@
-#[macro_use]
-extern crate log;
 extern crate bytes;
+extern crate cdb_ccommon;
 extern crate cdb_rs;
 extern crate env_logger;
 extern crate libc;
-
-extern crate cdb_ccommon;
+#[macro_use]
+extern crate log;
 
 mod ccommon;
 
+use ccommon::bind;
+use ccommon::bstring::{BStringRef, BStringRefMut};
+use cdb_rs::{CDBData, LoadOption, Reader, Result};
 use std::convert::From;
 use std::ffi::CStr;
+use std::fmt::Debug;
 use std::os::raw::c_char;
+use std::panic;
 use std::path::PathBuf;
 use std::ptr;
-
-use cdb_rs::{CDBData, LoadOption, Result, Reader};
-
-use ccommon::bstring::{BStringRef, BStringRefMut};
-use cdb_ccommon::bindings as bind;
 
 
 #[repr(C)]
@@ -31,7 +30,6 @@ pub enum CDBStoreMethod {
     HEAP = 1,
     MMAP = 2,
 }
-
 
 impl CDBHandle {
     pub unsafe fn from_raw<'a>(ptr: *mut CDBHandle) -> &'a CDBHandle {
@@ -85,38 +83,43 @@ pub extern "C" fn cdb_handle_create(
         })
 }
 
+fn log_and_return_null<E: Debug, T>(err: E) -> *mut T {
+    error!("got error: {:?}", err);
+    ptr::null_mut()
+}
+
 #[no_mangle]
 pub extern "C" fn cdb_get(
     h: *mut CDBHandle,
     k: *const bind::bstring,
     v: *mut bind::bstring,
-) -> *mut bind::bstring {
+) -> *mut bind::bstring { // TODO: add error reporting
     assert!(!h.is_null());
     assert!(!k.is_null());
     assert!(!v.is_null());
 
-    // TODO: don't do unwrap, be safe
-    let handle = unsafe { CDBHandle::from_raw(h) };
-    let key = unsafe { BStringRef::from_raw(k) };
-    let mut val = unsafe { BStringRefMut::from_raw(v) };
+    panic::catch_unwind(|| {
+        let handle = unsafe { CDBHandle::from_raw(h) };
+        let key = unsafe { BStringRef::from_raw(k) };
+        let mut val = unsafe { BStringRefMut::from_raw(v) };
 
-    match Reader::new(handle).get(&key, &mut val) {
-        Ok(Some(n)) => {
-            {
-                // this provides access to the underlying struct fields
-                // so we can modify the .len to be the actual number of bytes
-                // in the value.
-                let mut vstr = val.as_mut();
-                vstr.len = n as u32;
+        match Reader::new(handle).get(&key, &mut val) {
+            Ok(Some(n)) => {
+                {
+                    // this provides access to the underlying struct fields
+                    // so we can modify the .len to be the actual number of bytes
+                    // in the value.
+                    let mut vstr = val.as_mut();
+                    vstr.len = n as u32;
+                }
+                val.into_raw() // consume BufStringRefMut and return the underlying raw pointer
             }
-            val.into_raw() // consume BufStringRefMut and return the underlying raw pointer
+            Ok(None) => ptr::null_mut(), // not found, return a NULL
+            Err(err) => log_and_return_null(err)
         }
-        Ok(None) => ptr::null_mut(), // not found, return a NULL
-        Err(err) => {
-            eprintln!("got error: {:?}", err);
-            ptr::null_mut()
-        }
-    }
+    }).unwrap_or_else(|err|
+        log_and_return_null(err)
+    )
 }
 
 #[no_mangle]

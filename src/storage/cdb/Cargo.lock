@@ -117,6 +117,7 @@ dependencies = [
  "cdb_ccommon 0.1.0",
  "cdb_rs 0.1.0",
  "env_logger 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
