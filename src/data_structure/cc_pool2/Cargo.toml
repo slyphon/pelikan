@@ -1,0 +1,9 @@
+[package]
+name = "cc_pool2"
+version = "0.1.0"
+authors = ["Jonathan Simms <jsimms@twitter.com>"]
+publish = false
+description = "an object pool implementation providing similar features as cc_pool in cache-commons"
+
+[dependencies]
+bytes = "~0.4.8"
