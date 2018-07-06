@@ -34,17 +34,22 @@ impl DerefMut for PoolHandle {
 
 #[no_mangle]
 pub extern "C" fn pool2_create_handle(
-    szof: usize, nmax: usize, initf: ObjectInitFnPtr
+    szof: usize, nmax: u32, initf: ObjectInitFnPtr
 ) -> *const PoolHandle
 {
     let fw = Rc::new(FnWrapper::new(initf));
 
     let ph = PoolHandle {
         obj_size: szof,
-        inner: Pool::new(szof, nmax, fw.clone()),
+        inner: Pool::new(szof, nmax as usize, fw.clone()),
     };
 
     Box::into_raw(Box::new(ph))
+}
+
+#[no_mangle]
+pub extern "C" fn pool2_destroy_handle(handle_p: *mut PoolHandle) {
+    drop(unsafe { Box::from_raw(handle_p) });
 }
 
 #[no_mangle]
