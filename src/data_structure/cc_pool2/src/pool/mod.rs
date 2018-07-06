@@ -85,7 +85,8 @@ impl Pool {
         bs
     }
 
-    pub fn borrow(&mut self) -> Option<Box<[u8]>> {
+    #[inline]
+    pub fn take(&mut self) -> Option<Box<[u8]>> {
         let item =
             self.freeq
                 .pop_front()
@@ -103,7 +104,8 @@ impl Pool {
         item
     }
 
-    pub fn unborrow(&mut self, item: Box<[u8]>) {
+    #[inline]
+    pub fn put(&mut self, item: Box<[u8]>) {
         self.freeq.push_back(item);
         self.nused -= 1;
     }
@@ -117,7 +119,7 @@ mod test {
     fn test_prealloc_and_alloc_and_new() {
         let objsz = 5;
         let nmax = 10;
-        let mut p = Pool::new(objsz, nmax, ClosureWrapper::new(|mut buf| buf[0] = 1u8 ));
+        let mut p = Pool::new(objsz, nmax, ClosureWrapper::new(|buf| buf[0] = 1u8 ));
 
         assert_eq!(p.nused, 0);
         assert_eq!(p.nmax, 10);
@@ -142,12 +144,15 @@ mod test {
 
         p.prealloc(1);
 
-        let a = p.borrow().unwrap();
-        let b = p.borrow().unwrap();    // this should allocate because we're still under nmax
-        assert!(p.borrow().is_none());  // sorry we're full
+        let a = p.take().unwrap();
+        let b = p.take().unwrap();    // this should allocate because we're still under nmax
+        assert_eq!(p.nused, 2);
+        assert!(p.take().is_none());  // sorry we're full
 
-        p.unborrow(a);
-        p.unborrow(b);
+        p.put(a);
+        assert_eq!(p.nused, 1);
+        p.put(b);
         assert_eq!(p.freeq.len(), 2);
+        assert_eq!(p.nused, 0);
     }
 }
