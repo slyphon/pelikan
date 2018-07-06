@@ -7,3 +7,4 @@ description = "an object pool implementation providing similar features as cc_po
 
 [dependencies]
 bytes = "~0.4.8"
+failure = "~0.1.1"
