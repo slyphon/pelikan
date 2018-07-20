@@ -4,9 +4,9 @@ version = "0.2.0"
 authors = ["Jonathan Simms <jsimms@twitter.com>"]
 
 [dependencies]
-# ccommon_rs = { path = "../../../../deps/ccommon/rust/ccommon_rs" }
-ccommon_rs = { path = "/Users/jsimms/ccommon/rust/ccommon_rs" }
-cc_binding = { path = "/Users/jsimms/ccommon/rust/cc_binding" }
+ccommon_rs = { path = "../../../../deps/ccommon/rust/ccommon_rs" }
+cc_binding = { path = "../../../../deps/ccommon/rust/cc_binding" }
+
 cdb_rs = { path = "../cdb_rs" }
 
 log = "~0.4"
