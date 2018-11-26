@@ -142,12 +142,6 @@ endif(CHECK_FOUND)
 
 find_package(Threads)
 
-if(TARGET_CDB)
-    set(HAVE_RUST on)
-    enable_language(Rust)
-    include(CMakeCargo)
-endif(TARGET_CDB)
-
 #set(CMAKE_INCLUDE_CURRENT_DIR)
 include_directories(${include_directories}
     "${PROJECT_BINARY_DIR}"
@@ -156,6 +150,12 @@ include_directories(${include_directories}
 
 # server & (cli) client
 add_subdirectory(src)
+
+if(TARGET_CDB)
+    set(HAVE_RUST on)
+    enable_language(Rust)
+    include(CMakeCargo)
+endif(TARGET_CDB)
 
 # tests: always build last
 if(CHECK_WORKING)
