@@ -20,6 +20,10 @@ fn main() {
     let cwd = env::current_dir().unwrap();
     eprintln!("CWD: {}", cwd.to_str().unwrap());
 
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=framework=Security");
+    }
+
     let ccommon_include = fs::canonicalize("./../../../../deps/ccommon/include").unwrap();
     let include_path = fs::canonicalize("./..").unwrap();
 

@@ -20,6 +20,10 @@ set(LIBS
     dl
     ${CMAKE_THREAD_LIBS_INIT})
 
+if (APPLE)
+    set(LIBS "${LIBS} -framework Security")
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/_bin)
 set(TARGET_NAME ${PROJECT_NAME}_cdb)
 
